@@ -1,6 +1,7 @@
 ---
 name: prd
 description: "Generate a Product Requirements Document (PRD) for a new feature. Use when planning a feature, starting a new project, or when asked to create a PRD. Triggers on: create a prd, write prd for, plan this feature, requirements for, spec out."
+user-invocable: true
 ---
 
 # PRD Generator
@@ -51,7 +52,7 @@ Ask only critical questions where the initial prompt is ambiguous. Focus on:
    D. Just the UI
 ```
 
-This lets users respond with "1A, 2C, 3B" for quick iteration.
+This lets users respond with "1A, 2C, 3B" for quick iteration. Remember to indent the options.
 
 ---
 

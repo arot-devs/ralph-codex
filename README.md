@@ -2,7 +2,7 @@
 
 ![Ralph](ralph.webp)
 
-Ralph is an autonomous AI agent loop that runs Codex repeatedly until all PRD items are complete. Each iteration is a fresh Codex instance with clean context. Memory persists via git history, `progress.txt`, and `prd.json`.
+Ralph is an autonomous AI agent loop that runs Codex repeatedly until all PRD items are complete. Each iteration is a fresh Codex instance with clean context. Memory persists via git history, `progress.txt`, and `prd.json`. Claude Code is also supported via `--tool claude`.
 
 Based on [Geoffrey Huntley's Ralph pattern](https://ghuntley.com/ralph/).
 
@@ -11,6 +11,7 @@ Based on [Geoffrey Huntley's Ralph pattern](https://ghuntley.com/ralph/).
 ## Prerequisites
 
 - Codex CLI installed and authenticated
+- Optional: [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated (`npm install -g @anthropic-ai/claude-code`)
 - `jq` installed (`brew install jq` on macOS)
 - A git repository for your project
 
@@ -24,11 +25,15 @@ Copy the ralph files into your project:
 # From your project root
 mkdir -p scripts/ralph
 cp /path/to/ralph/ralph.sh scripts/ralph/
-cp /path/to/ralph/prompt.md scripts/ralph/
+cp /path/to/ralph/prompt.md scripts/ralph/prompt.md
+
+# Optional: Claude Code prompt template
+cp /path/to/ralph/CLAUDE.md scripts/ralph/CLAUDE.md
+
 chmod +x scripts/ralph/ralph.sh
 ```
 
-### Option 2: Install skills globally
+### Option 2: Install skills globally (Codex)
 
 Copy the skills to your Codex config for use across all projects:
 
@@ -37,6 +42,35 @@ cp -r skills/prd ~/.codex/skills/
 cp -r skills/ralph ~/.codex/skills/
 cp -r skills/ralph-codex ~/.codex/skills/
 ```
+
+### Option 3: Install skills for Claude Code (manual)
+
+```bash
+cp -r skills/prd ~/.claude/skills/
+cp -r skills/ralph ~/.claude/skills/
+```
+
+### Option 4: Use as Claude Code Marketplace
+
+Add the Ralph marketplace to Claude Code:
+
+```bash
+/plugin marketplace add snarktank/ralph
+```
+
+Then install the skills:
+
+```bash
+/plugin install ralph-skills@ralph-marketplace
+```
+
+Available skills after installation:
+- `/prd` - Generate Product Requirements Documents
+- `/ralph` - Convert PRDs to prd.json format
+
+Skills are automatically invoked when you ask Claude to:
+- "create a prd", "write prd for", "plan this feature"
+- "convert this prd", "turn into ralph format", "create prd.json"
 
 ## Workflow
 
@@ -63,10 +97,14 @@ This creates `prd.json` with user stories structured for autonomous execution.
 ### 3. Run Ralph
 
 ```bash
+# Using Codex (default)
 ./scripts/ralph/ralph.sh [max_iterations]
+
+# Using Claude Code
+./scripts/ralph/ralph.sh --tool claude [max_iterations]
 ```
 
-Default is 10 iterations.
+Default is 10 iterations. Use `--tool codex` or `--tool claude` to select your AI coding tool.
 
 Ralph will:
 1. Create a feature branch (from PRD `branchName`)
@@ -82,14 +120,16 @@ Ralph will:
 
 | File | Purpose |
 |------|---------|
-| `ralph.sh` | The bash loop that spawns fresh Codex instances |
-| `prompt.md` | Instructions given to each Codex instance |
+| `ralph.sh` | The bash loop that spawns fresh Codex instances (supports `--tool codex` or `--tool claude`) |
+| `prompt.md` | Prompt template for Codex |
+| `CLAUDE.md` | Prompt template for Claude Code |
 | `prd.json` | User stories with `passes` status (the task list) |
 | `prd.json.example` | Example PRD format for reference |
 | `progress.txt` | Append-only learnings for future iterations |
 | `skills/prd/` | Skill for generating PRDs |
 | `skills/ralph/` | Skill for converting PRDs to JSON |
 | `skills/ralph-codex/` | Skill for operating the Codex-native Ralph loop |
+| `.claude-plugin/` | Plugin manifest for Claude Code marketplace discovery |
 | `flowchart/` | Interactive visualization of how Ralph works |
 
 ## Flowchart
@@ -110,7 +150,7 @@ npm run dev
 
 ### Each Iteration = Fresh Context
 
-Each iteration spawns a **new Codex instance** with clean context. The only memory between iterations is:
+Each iteration spawns a **new Codex instance** (or Claude Code instance when selected) with clean context. The only memory between iterations is:
 - Git history (commits from previous iterations)
 - `progress.txt` (learnings and context)
 - `prd.json` (which stories are done)
@@ -132,7 +172,7 @@ Too big (split these):
 
 ### AGENTS.md Updates Are Critical
 
-After each iteration, Ralph updates the relevant `AGENTS.md` files with learnings. This is key because Codex automatically reads these files, so future iterations (and future human developers) benefit from discovered patterns, gotchas, and conventions.
+After each iteration, Ralph updates the relevant `AGENTS.md` files with learnings. This is key because Codex and Claude Code automatically read these files, so future iterations (and future human developers) benefit from discovered patterns, gotchas, and conventions.
 
 Examples of what to add to AGENTS.md:
 - Patterns discovered ("this codebase uses X for Y")
@@ -169,9 +209,9 @@ cat progress.txt
 git log --oneline -10
 ```
 
-## Customizing prompt.md
+## Customizing the Prompt
 
-Edit `prompt.md` to customize Ralph's behavior for your project:
+After copying `prompt.md` (for Codex) or `CLAUDE.md` (for Claude Code) to your project, customize it for your project:
 - Add project-specific quality check commands
 - Include codebase conventions
 - Add common gotchas for your stack
@@ -184,3 +224,4 @@ Ralph automatically archives previous runs when you start a new feature (differe
 
 - [Geoffrey Huntley's Ralph article](https://ghuntley.com/ralph/)
 - Codex CLI docs: run `codex --help`
+- [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code)
